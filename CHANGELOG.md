@@ -1,3 +1,3 @@
-## 0.0.1
+## 1.0.0 - November 27th, 2025
 
-* TODO: Describe initial release.
+- Initial release!

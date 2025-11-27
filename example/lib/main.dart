@@ -29,63 +29,53 @@ class _ExampleScaffoldState extends State<ExampleScaffold> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Navigation Bar Example')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Text('Number of Destinations:'),
-                const SizedBox(width: 8),
-                DropdownButton<int>(
-                  value: _navCount,
-                  items: List.generate(3, (i) => i + 2)
-                      .map(
-                        (count) => DropdownMenuItem(
-                          value: count,
-                          child: Text(count.toString()),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() {
-                        _navCount = val;
-                        if (_selectedIndex >= _navCount) {
-                          _selectedIndex = 0;
-                        }
-                      });
+      appBar: AppBar(title: const Text('Lucky Navigation Bar')),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            title: const Text('Number of Destinations'),
+            trailing: DropdownButton<int>(
+              value: _navCount,
+              items: List.generate(3, (i) => i + 2)
+                  .map(
+                    (count) => DropdownMenuItem(
+                      value: count,
+                      child: Text(count.toString()),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() {
+                    _navCount = val;
+                    if (_selectedIndex >= _navCount) {
+                      _selectedIndex = 0;
                     }
-                  },
-                ),
-              ],
+                  });
+                }
+              },
             ),
-            Row(
-              children: [
-                const Text('Show FAB:'),
-                Switch(
-                  value: _showFab,
-                  onChanged: (val) {
-                    setState(() {
-                      _showFab = val;
-                    });
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: Center(
-                child: Text(
-                  'Selected: Destination ${_selectedIndex + 1}',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
+          ),
+          SwitchListTile(
+            title: const Text('Show FAB'),
+            value: _showFab,
+            onChanged: (val) {
+              setState(() {
+                _showFab = val;
+              });
+            },
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: Center(
+              child: Text(
+                'Selected: Destination ${_selectedIndex + 1}',
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: LuckyNavigationBar(
         selectedIndex: _selectedIndex,
@@ -93,7 +83,7 @@ class _ExampleScaffoldState extends State<ExampleScaffold> {
           _navCount,
           (i) => NavigationDestination(
             icon: const Icon(Icons.circle),
-            label: 'Dest ${i + 1}',
+            label: 'Tab ${i + 1}',
           ),
         ),
         onDestinationSelected: (idx) {
@@ -104,7 +94,10 @@ class _ExampleScaffoldState extends State<ExampleScaffold> {
         trailing: _showFab
             ? FloatingActionButton(
                 onPressed: () {},
-                child: const Icon(Icons.add),
+                elevation: 1,
+                highlightElevation: 1,
+                shape: const CircleBorder(),
+                child: const Icon(Icons.search, size: 28),
               )
             : null,
       ),

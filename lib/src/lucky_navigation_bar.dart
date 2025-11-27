@@ -298,7 +298,7 @@ class _LuckyNavigationBarView extends StatefulWidget {
 
 class _LuckyNavigationBarViewState extends State<_LuckyNavigationBarView>
     with SingleTickerProviderStateMixin {
-  late final tabCount = widget.destinations.length;
+  late int tabCount = widget.destinations.length;
 
   bool _isDown = false;
   bool _isDragging = false;
@@ -317,6 +317,10 @@ class _LuckyNavigationBarViewState extends State<_LuckyNavigationBarView>
 
     if (oldWidget.tabIndex != widget.tabIndex) {
       setState(() => xAlign = computeAlignmentForTab(widget.tabIndex));
+    }
+
+    if (oldWidget.destinations != widget.destinations) {
+      setState(() => tabCount = widget.destinations.length);
     }
   }
 

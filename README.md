@@ -1,39 +1,64 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# Lucky Navigation Bar
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+[![Package](https://img.shields.io/pub/v/lucky_navigation_bar.svg?style=for-the-badge)](https://pub.dartlang.org/packages/lucky_navigation_bar)
+[![style: very good analysis](https://img.shields.io/badge/style-very_good_analysis-B22C89.svg?style=for-the-badge)](https://pub.dev/packages/very_good_analysis)
+[![Build](https://img.shields.io/github/actions/workflow/status/jesusrp98/lucky_navigation_bar/flutter_package.yml?branch=master&style=for-the-badge)](https://github.com/jesusrp98/lucky_navigation_bar/actions)
+[![Patreon](https://img.shields.io/badge/Support-Patreon-orange.svg?style=for-the-badge)](https://www.patreon.com/jesusrp98)
+[![License](https://img.shields.io/github/license/jesusrp98/lucky_navigation_bar.svg?style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
+This Flutter package allows you to use a iOS 26 (codenamed `lucky`) inspired navigation bar. You can even add a widget to the right also.
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/jesusrp98/lucky_navigation_bar/master/screenshots/gif_1.gif" width="300" hspace="4">
+</p>
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+- Flexible Destinations: Add 2–6 navigation destinations with icons and labels using regular `NavigationDestination` class.
+- Custom Trailing Widget: Add widgets (e.g., `FloatingActionButton`) to the end of the navigation bar, to mimick iOS.
+- Stateful Selection: Easily manage and update the selected destination.
+- Adaptive Layout: Handles different numbers of destinations and orientations gracefully.
+- Easy Integration: Drop into any Scaffold as a bottom navigation bar, no complicated setup required.
 
-## Getting started
+## Example
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Here is an example of a simple use of this package, featuring the `ExpandChild` & `ExpandText` widgets.
 
-## Usage
+If you want to take a deeper look at the example, take a look at the [example](https://github.com/jesusrp98/lucky_navigation_bar/tree/master/example) folder provided with the project.
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
 
-```dart
-const like = 'sample';
+```
+LuckyNavigationBar(
+  destinations: const [
+    NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+    NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
+    NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
+  ],
+  selectedIndex: selectedIndex,
+  onDestinationSelected: (i) => setState(() => selectedIndex = i),
+  trailing: FloatingActionButton(
+    onPressed: () {},
+    child: Icon(Icons.search),
+  ),
+)
 ```
 
-## Additional information
+## Getting Started
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+This project is a starting point for a Dart [package](https://flutter.io/developing-packages/), a library module containing code that can be shared easily across multiple Flutter or Dart projects.
+
+For help getting started with Flutter, view our [online documentation](https://flutter.io/docs), which offers tutorials, samples, guidance on mobile development, and a full API reference.
+
+## Built with
+
+- [Flutter](https://flutter.dev/) - Beatiful native apps in record time.
+- [Android Studio](https://developer.android.com/studio/index.html/) - Tools for building apps on every type of Android device.
+- [Visual Studio Code](https://code.visualstudio.com/) - Code editing. Redefined.
+
+## Authors
+
+- **Jesús Rodríguez** - you can find me on [GitHub](https://github.com/jesusrp98), [Twitter](https://twitter.com/jesusrp98) & [Reddit](https://www.reddit.com/user/jesusrp98).
+
+## License
+
+This project is licensed under the GNU GPL v3 License - see the [LICENSE](LICENSE) file for details.
