@@ -9,7 +9,7 @@
 This Flutter package allows you to use a iOS 26 (codenamed `lucky`) inspired navigation bar. You can even add a widget to the right also.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/jesusrp98/lucky_navigation_bar/main/screenshots/gif_1.gif" width="300" hspace="4">
+  <img src="https://raw.githubusercontent.com/jesusrp98/lucky_navigation_bar/main/screenshots/gif_1.gif" width="600" hspace="4">
 </p>
 
 ## Features
