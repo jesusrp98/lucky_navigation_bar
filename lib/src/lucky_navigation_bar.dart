@@ -1,13 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:motor/motor.dart';
 
+/// A customizable navigation bar widget for Flutter applications.
+///
+/// The [LuckyNavigationBar] displays a row of navigation destinations,
+/// allowing users to switch between different sections of the app.
+/// It supports an optional trailing widget, such as a button or icon,
+/// and highlights the currently selected destination.
+///
+/// The navigation bar has a fixed height and padding, defined by
+/// [height] and [paddingValue] respectively.
+///
+/// Example usage:
+/// ```dart
+/// LuckyNavigationBar(
+///   destinations: [
+///     NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+///     NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
+///   ],
+///   selectedIndex: 0,
+///   onDestinationSelected: (index) {
+///     // Handle navigation
+///   },
+///   trailing: IconButton(
+///     icon: Icon(Icons.settings),
+///     onPressed: () {},
+///   ),
+/// )
+/// ```
+///
+/// {@tool snippet}
+/// See also:
+///  * [NavigationDestination], which defines each destination.
+/// {@end-tool}
 class LuckyNavigationBar extends StatefulWidget {
   static const paddingValue = 21.0;
   static const height = 62.0;
 
+  /// The list of navigation destinations to display.
   final List<NavigationDestination> destinations;
+
+  ///Callback triggered when a destination is selected, providing the index.
   final ValueChanged<int> onDestinationSelected;
+
+  ///The index of the currently selected destination. Defaults to 0.
   final int selectedIndex;
+
+  /// An optional widget displayed at the end of the navigation bar.
   final Widget? trailing;
 
   const LuckyNavigationBar({
