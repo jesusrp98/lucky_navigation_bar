@@ -1,3 +1,5 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 import 'package:motor/motor.dart';
 
@@ -35,7 +37,9 @@ import 'package:motor/motor.dart';
 /// {@end-tool}
 class LuckyNavigationBar extends StatefulWidget {
   static const paddingValue = 21.0;
+  static const minimizedPaddingValue = 28.0;
   static const height = 62.0;
+  static const minimizedHeight = 48.0;
 
   /// The list of navigation destinations to display.
   final List<NavigationDestination> destinations;
@@ -49,11 +53,33 @@ class LuckyNavigationBar extends StatefulWidget {
   /// An optional widget displayed at the end of the navigation bar.
   final Widget? trailing;
 
+  /// An optional widget displayed between the minimized bar and trailing
+  /// widget.
+  ///
+  /// The accessory fades and expands in when [minimized] is true, matching the
+  /// transition of the navigation bar as it collapses.
+  final Widget? accessory;
+
+  /// Whether the navigation bar should collapse into the selected icon.
+  ///
+  /// When minimized, the bar keeps its regular height but animates its width to
+  /// a 62x62 circle and only displays the icon of the selected destination.
+  final bool minimized;
+
+  /// Callback triggered when the collapsed circle is tapped while [minimized]
+  /// is true.
+  ///
+  /// Typically used to expand the bar back to its full state.
+  final VoidCallback? onMinimizedPressed;
+
   const LuckyNavigationBar({
     required this.destinations,
     required this.onDestinationSelected,
     this.selectedIndex = 0,
     this.trailing,
+    this.accessory,
+    this.minimized = false,
+    this.onMinimizedPressed,
     super.key,
   });
 
@@ -86,9 +112,11 @@ class _LuckyNavigationBarState extends State<LuckyNavigationBar>
       reverseCurve: Curves.easeInCubic,
     );
 
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => setState(() => _itemSpacing = itemSpacing),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !widget.minimized) {
+        setState(() => _itemSpacing = itemSpacing);
+      }
+    });
   }
 
   @override
@@ -107,6 +135,18 @@ class _LuckyNavigationBarState extends State<LuckyNavigationBar>
         (_) => onTabSelected(widget.selectedIndex),
       );
     }
+
+    if (oldWidget.minimized != widget.minimized) {
+      if (widget.minimized) {
+        setState(() => _itemSpacing = 0);
+      } else {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted && !widget.minimized) {
+            setState(() => _itemSpacing = itemSpacing);
+          }
+        });
+      }
+    }
   }
 
   void _onTapDown(PointerDownEvent details) => _controller.forward();
@@ -124,87 +164,91 @@ class _LuckyNavigationBarState extends State<LuckyNavigationBar>
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
           const Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            height: LuckyNavigationBar.paddingValue + LuckyNavigationBar.height,
+            height:
+                LuckyNavigationBar.minimizedPaddingValue +
+                LuckyNavigationBar.height,
             child: _LuckyNavigationBarBrim(),
           ),
-          SafeArea(
-            bottom: !isIOS,
-            minimum: const EdgeInsets.all(
-              LuckyNavigationBar.paddingValue,
-            ).copyWith(top: 0),
-            child: Row(
-              spacing: 8,
-              mainAxisAlignment: widget.trailing == null
-                  ? .center
-                  : .spaceBetween,
-              children: [
-                Flexible(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: resolveWidth),
-                    child: Listener(
-                      onPointerDown: _onTapDown,
-                      onPointerUp: _onPointerUp,
-                      child: AnimatedBuilder(
-                        animation: _scaleAnimation,
-                        builder: (_, child) => Transform.scale(
-                          scale: 1 + _scaleAnimation.value * scalingFactor,
-                          child: child,
+          TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOutCubicEmphasized,
+            tween: Tween(end: widget.minimized ? 1 : 0),
+            builder: (context, progress, _) {
+              final padding = lerpDouble(
+                LuckyNavigationBar.paddingValue,
+                LuckyNavigationBar.minimizedPaddingValue,
+                progress,
+              )!;
+              final height = lerpDouble(
+                LuckyNavigationBar.height,
+                LuckyNavigationBar.minimizedHeight,
+                progress,
+              )!;
+
+              return SafeArea(
+                bottom: !isIOS,
+                minimum: EdgeInsets.all(padding).copyWith(top: 0),
+                child: SizedBox(
+                  height: height,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
+                      if (widget.accessory != null)
+                        Positioned(
+                          top: 0,
+                          bottom: 0,
+                          left: height + 8,
+                          right: widget.trailing == null ? 0 : height + 8,
+                          child: _LuckyNavigationBarAccessory(
+                            visible: widget.minimized,
+                            child: widget.accessory!,
+                          ),
                         ),
-                        child: _LuckyNavigationBarView(
-                          tabIndex: widget.selectedIndex,
-                          destinations: widget.destinations,
-                          onTabChanged: onTabSelected,
-                          child: SizedBox(
-                            height: LuckyNavigationBar.height,
-                            child: Material(
-                              shape: RoundedSuperellipseBorder(
-                                borderRadius: BorderRadius.circular(
-                                  LuckyNavigationBar.height / 2,
+                      Row(
+                        spacing: 8,
+                        mainAxisAlignment: widget.trailing == null
+                            ? .center
+                            : .spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Listener(
+                              onPointerDown: _onTapDown,
+                              onPointerUp: _onPointerUp,
+                              child: AnimatedBuilder(
+                                animation: _scaleAnimation,
+                                builder: (_, child) => Transform.scale(
+                                  scale:
+                                      1 + _scaleAnimation.value * scalingFactor,
+                                  child: child,
                                 ),
-                                side: BorderSide(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .outlineVariant
-                                      .withValues(alpha: .4),
-                                  width: 0.5,
-                                ),
-                              ),
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainer,
-                              elevation: 1,
-                              child: Padding(
-                                padding: internalPadding,
-                                child: Row(
-                                  mainAxisAlignment: .spaceEvenly,
-                                  spacing: _itemSpacing,
-                                  children: List.generate(
-                                    widget.destinations.length,
-                                    (index) => Expanded(
-                                      child: _LuckyNavigationBarItem(
-                                        destination: widget.destinations[index],
-                                        selected: widget.selectedIndex == index,
-                                        onTap: () => onTabSelected(index),
-                                      ),
-                                    ),
-                                  ),
+                                child: _LuckyNavigationBarSurface(
+                                  minimized: widget.minimized,
+                                  expandedWidth: resolveWidth,
+                                  height: height,
+                                  selectedIndex: widget.selectedIndex,
+                                  destinations: widget.destinations,
+                                  itemSpacing: _itemSpacing,
+                                  onTabChanged: onTabSelected,
+                                  onMinimizedPressed: widget.onMinimizedPressed,
                                 ),
                               ),
                             ),
                           ),
-                        ),
+                          ?widget.trailing,
+                        ],
                       ),
-                    ),
+                    ],
                   ),
                 ),
-                ?widget.trailing,
-              ],
-            ),
+              );
+            },
           ),
         ],
       ),
@@ -224,6 +268,40 @@ class _LuckyNavigationBarState extends State<LuckyNavigationBar>
   }
 }
 
+class _LuckyNavigationBarAccessory extends StatelessWidget {
+  final Widget child;
+  final bool visible;
+
+  const _LuckyNavigationBarAccessory({
+    required this.child,
+    required this.visible,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: kThemeAnimationDuration * 2,
+      curve: Curves.easeOutCubic,
+      tween: Tween(end: visible ? 1.0 : 0.0),
+      builder: (context, value, child) {
+        final opacity = ((value - .28) / .72).clamp(0.0, 1.0);
+
+        return IgnorePointer(
+          ignoring: opacity < 1,
+          child: Opacity(
+            opacity: opacity,
+            child: Transform.translate(
+              offset: Offset(0, (1 - opacity) * 4),
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+}
+
 class _LuckyNavigationBarBrim extends StatelessWidget {
   const _LuckyNavigationBarBrim();
 
@@ -240,6 +318,172 @@ class _LuckyNavigationBarBrim extends StatelessWidget {
               Theme.of(context).colorScheme.surface.withAlpha(0),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LuckyNavigationBarSurface extends StatelessWidget {
+  final List<NavigationDestination> destinations;
+  final ValueChanged<int> onTabChanged;
+  final int selectedIndex;
+  final double itemSpacing;
+  final bool minimized;
+  final double expandedWidth;
+  final double height;
+  final VoidCallback? onMinimizedPressed;
+
+  const _LuckyNavigationBarSurface({
+    required this.destinations,
+    required this.onTabChanged,
+    required this.selectedIndex,
+    required this.itemSpacing,
+    required this.minimized,
+    required this.expandedWidth,
+    required this.height,
+    required this.onMinimizedPressed,
+  });
+
+  ShapeBorder _shape(BuildContext context) => RoundedSuperellipseBorder(
+    borderRadius: BorderRadius.circular(height / 2),
+    side: BorderSide(
+      color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .4),
+      width: 0.5,
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedDestinationIndex = selectedIndex.clamp(
+      0,
+      destinations.length - 1,
+    );
+    final selectedDestination = destinations[selectedDestinationIndex];
+
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOutCubicEmphasized,
+      tween: Tween(end: minimized ? 1 : 0),
+      builder: (context, progress, _) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: minimized ? onMinimizedPressed : null,
+        child: _LuckyNavigationBarMorphTransition(
+          progress: progress,
+          expandedWidth: expandedWidth,
+          height: height,
+          shape: _shape(context),
+          selectedDestination: selectedDestination,
+          expandedChild: _LuckyNavigationBarView(
+            tabIndex: selectedIndex,
+            destinations: destinations,
+            onTabChanged: onTabChanged,
+            child: Padding(
+              padding: _LuckyNavigationBarState.internalPadding,
+              child: TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 100),
+                curve: Curves.easeInOutCubic,
+                tween: Tween(end: itemSpacing),
+                builder: (context, spacing, _) => Row(
+                  mainAxisAlignment: .spaceEvenly,
+                  spacing: spacing,
+                  children: List.generate(
+                    destinations.length,
+                    (index) => Expanded(
+                      child: _LuckyNavigationBarItem(
+                        destination: destinations[index],
+                        selected: selectedIndex == index,
+                        onTap: () => onTabChanged(index),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LuckyNavigationBarMorphTransition extends StatelessWidget {
+  final double progress;
+  final double expandedWidth;
+  final double height;
+  final ShapeBorder shape;
+  final NavigationDestination selectedDestination;
+  final Widget expandedChild;
+
+  const _LuckyNavigationBarMorphTransition({
+    required this.progress,
+    required this.expandedWidth,
+    required this.height,
+    required this.shape,
+    required this.selectedDestination,
+    required this.expandedChild,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final width = lerpDouble(expandedWidth, height, progress);
+    final expandedOpacity = (1 - (progress * 1.45)).clamp(0.0, 1.0);
+    final selectedIconOpacity = ((progress - .34) / .66).clamp(0.0, 1.0);
+    final selectedIconScale = lerpDouble(.74, 1, selectedIconOpacity)!;
+    final theme = Theme.of(context);
+    final selectedColor = theme.colorScheme.primary;
+
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Material(
+        shape: shape,
+        color: theme.colorScheme.surfaceContainer,
+        elevation: 1,
+        animationDuration: .zero,
+        child: Stack(
+          clipBehavior: Clip.none,
+          fit: StackFit.expand,
+          alignment: Alignment.center,
+          children: [
+            if (expandedOpacity > 0)
+              IgnorePointer(
+                ignoring: progress > .05,
+                child: Opacity(
+                  opacity: expandedOpacity,
+                  child: Transform.translate(
+                    offset: Offset(0, progress * 5),
+                    child: Transform.scale(
+                      scale: lerpDouble(1, .96, progress),
+                      child: expandedChild,
+                    ),
+                  ),
+                ),
+              ),
+            if (progress > 0)
+              Opacity(
+                opacity: selectedIconOpacity,
+                child: Transform.scale(
+                  scale: selectedIconScale,
+                  child: AnimatedSwitcher(
+                    duration: kThemeAnimationDuration,
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    child: IconTheme.merge(
+                      key: ValueKey(selectedDestination),
+                      data: IconThemeData(
+                        color: selectedColor,
+                        fill: 1,
+                        size: 28,
+                      ),
+                      child:
+                          selectedDestination.selectedIcon ??
+                          selectedDestination.icon,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

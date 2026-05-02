@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   lucky_navigation_bar:
     path: ../
+  material_symbols_icons: 
 
 dev_dependencies:
   flutter_test:

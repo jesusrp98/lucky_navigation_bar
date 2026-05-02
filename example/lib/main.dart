@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucky_navigation_bar/lucky_navigation_bar.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 void main() {
   runApp(const MainApp());
@@ -10,7 +11,13 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(home: ExampleScaffold());
+    return MaterialApp(
+      home: ExampleScaffold(),
+      theme: ThemeData.light().copyWith(
+        iconTheme: const IconThemeData(opticalSize: 24),
+      ),
+      debugShowCheckedModeBanner: false,
+    );
   }
 }
 
@@ -24,6 +31,8 @@ class ExampleScaffold extends StatefulWidget {
 class _ExampleScaffoldState extends State<ExampleScaffold> {
   int _navCount = 3;
   bool _showFab = true;
+  bool _minimized = false;
+  bool _showAccessory = true;
   int _selectedIndex = 0;
 
   @override
@@ -66,7 +75,24 @@ class _ExampleScaffoldState extends State<ExampleScaffold> {
               });
             },
           ),
-          const SizedBox(height: 24),
+          SwitchListTile(
+            title: const Text('Minimized'),
+            value: _minimized,
+            onChanged: (val) {
+              setState(() {
+                _minimized = val;
+              });
+            },
+          ),
+          SwitchListTile(
+            title: const Text('Show Accessory'),
+            value: _showAccessory,
+            onChanged: (val) {
+              setState(() {
+                _showAccessory = val;
+              });
+            },
+          ),
           Expanded(
             child: Center(
               child: Text(
@@ -79,10 +105,15 @@ class _ExampleScaffoldState extends State<ExampleScaffold> {
       ),
       bottomNavigationBar: LuckyNavigationBar(
         selectedIndex: _selectedIndex,
+        minimized: _minimized,
         destinations: List.generate(
           _navCount,
           (i) => NavigationDestination(
-            icon: const Icon(Icons.circle),
+            icon: Icon(switch (i) {
+              1 => Symbols.king_bed_rounded,
+              2 => Symbols.play_circle_rounded,
+              _ => Symbols.home_rounded,
+            }),
             label: 'Tab ${i + 1}',
           ),
         ),
@@ -91,15 +122,55 @@ class _ExampleScaffoldState extends State<ExampleScaffold> {
             _selectedIndex = idx;
           });
         },
+        onMinimizedPressed: () {
+          setState(() {
+            _minimized = false;
+          });
+        },
+        accessory: _showAccessory ? _Accessory() : null,
         trailing: _showFab
-            ? FloatingActionButton(
-                onPressed: () {},
-                elevation: 1,
-                highlightElevation: 1,
-                shape: const CircleBorder(),
-                child: const Icon(Icons.search, size: 28),
+            ? AspectRatio(
+                aspectRatio: 1,
+                child: FloatingActionButton(
+                  onPressed: () {},
+                  elevation: 1,
+                  highlightElevation: 1,
+                  shape: const CircleBorder(),
+                  child: const Icon(Icons.search, size: 28),
+                ),
               )
             : null,
+      ),
+    );
+  }
+}
+
+class _Accessory extends StatelessWidget {
+  const _Accessory();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return SizedBox(
+      height: LuckyNavigationBar.minimizedHeight,
+      child: Material(
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(LuckyNavigationBar.height / 2),
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: .4),
+            width: 0.5,
+          ),
+        ),
+        color: colorScheme.surfaceContainer,
+        elevation: 1,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisAlignment: .spaceAround,
+            children: const [Text('Years'), Text('Months')],
+          ),
+        ),
       ),
     );
   }

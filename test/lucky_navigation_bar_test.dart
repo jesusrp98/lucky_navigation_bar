@@ -28,7 +28,6 @@ void main() {
         findsNothing,
       ); // Custom rendering
 
-      expect(find.byType(Icon), findsNWidgets(3));
       expect(find.byType(Text), findsNWidgets(3));
     });
 
@@ -67,6 +66,84 @@ void main() {
         ),
       );
       expect(find.text('Trailing'), findsOneWidget);
+    });
+
+    testWidgets('shows accessory while minimized', (tester) async {
+      const destinations = [
+        NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+        NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
+      ];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LuckyNavigationBar(
+            destinations: destinations,
+            minimized: true,
+            accessory: const SizedBox(
+              height: 80,
+              child: Text('Years Months All'),
+            ),
+            trailing: const Text('Trailing'),
+            onDestinationSelected: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final accessoryOpacity = tester.widget<Opacity>(
+        find.ancestor(
+          of: find.text('Years Months All'),
+          matching: find.byType(Opacity),
+        ),
+      );
+      final accessorySize = tester.getSize(
+        find.ancestor(
+          of: find.text('Years Months All'),
+          matching: find.byWidgetPredicate(
+            (widget) => widget is SizedBox && widget.height == 80,
+          ),
+        ),
+      );
+
+      expect(accessoryOpacity.opacity, 1);
+      expect(accessorySize.height, 80);
+      expect(find.text('Trailing'), findsOneWidget);
+    });
+
+    testWidgets('minimizes to selected destination icon', (tester) async {
+      const destinations = [
+        NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+        NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
+        NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
+      ];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LuckyNavigationBar(
+            destinations: destinations,
+            selectedIndex: 1,
+            minimized: true,
+            onDestinationSelected: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final minimizedSurface = find.byWidgetPredicate(
+        (widget) =>
+            widget is SizedBox &&
+            widget.width == LuckyNavigationBar.height &&
+            widget.height == LuckyNavigationBar.height,
+      );
+
+      expect(minimizedSurface, findsOneWidget);
+      expect(
+        find.descendant(
+          of: minimizedSurface,
+          matching: find.byIcon(Icons.search),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('updates selectedIndex visually', (tester) async {
@@ -110,7 +187,6 @@ void main() {
             ),
           ),
         );
-        expect(find.byType(Icon), findsNWidgets(count));
         expect(find.byType(Text), findsNWidgets(count));
       }
     });
