@@ -130,12 +130,6 @@ class _LuckyNavigationBarState extends State<LuckyNavigationBar>
   void didUpdateWidget(covariant LuckyNavigationBar oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.selectedIndex != widget.selectedIndex) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => onTabSelected(widget.selectedIndex),
-      );
-    }
-
     if (oldWidget.minimized != widget.minimized) {
       if (widget.minimized) {
         setState(() => _itemSpacing = 0);
@@ -518,7 +512,7 @@ class _LuckyNavigationBarItem extends StatelessWidget {
             children: [
               TweenAnimationBuilder(
                 tween: ColorTween(
-                  begin: unselectedColor,
+                  begin: selected ? selectedColor : unselectedColor,
                   end: selected ? selectedColor : unselectedColor,
                 ),
                 duration: kThemeAnimationDuration,
@@ -529,7 +523,10 @@ class _LuckyNavigationBarItem extends StatelessWidget {
                   mainAxisSize: .min,
                   children: [
                     TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0, end: selected ? 1 : 0),
+                      tween: Tween(
+                        begin: selected ? 1 : 0,
+                        end: selected ? 1 : 0,
+                      ),
                       duration: kThemeAnimationDuration,
                       curve: Curves.easeInOutCubic,
                       builder: (_, value, _) => IconTheme.merge(
@@ -585,6 +582,7 @@ class _LuckyNavigationBarViewState extends State<_LuckyNavigationBarView>
 
   bool _isDown = false;
   bool _isDragging = false;
+  bool _skipMotion = false;
 
   late double xAlign = computeAlignmentForTab(widget.tabIndex);
 
@@ -598,8 +596,17 @@ class _LuckyNavigationBarViewState extends State<_LuckyNavigationBarView>
   void didUpdateWidget(covariant _LuckyNavigationBarView oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.tabIndex != widget.tabIndex) {
-      setState(() => xAlign = computeAlignmentForTab(widget.tabIndex));
+    if (oldWidget.tabIndex != widget.tabIndex && widget.tabIndex >= 0) {
+      final reappearing = oldWidget.tabIndex < 0;
+      setState(() {
+        xAlign = computeAlignmentForTab(widget.tabIndex);
+        if (reappearing) _skipMotion = true;
+      });
+      if (reappearing) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _skipMotion = false);
+        });
+      }
     }
 
     if (oldWidget.destinations != widget.destinations) {
@@ -670,12 +677,12 @@ class _LuckyNavigationBarViewState extends State<_LuckyNavigationBarView>
     });
 
     final currentRelativeX = (xAlign + 1) / 2; // Convert from -1:1 to 0:1
-    final tabWidth = 1.0 / tabCount;
 
-    // Determine target tab based on position and velocity
+    // Determine target tab based on position.
+    // The alignment maps tab indices 0..(tabCount-1) linearly to -1..1, so the
+    // inverse is currentRelativeX * (tabCount - 1) to land on a tab index.
     int targetTabIndex;
 
-    // Handle overdrag scenarios first
     if (currentRelativeX < 0) {
       // Overdragged to the left - snap to first tab
       targetTabIndex = 0;
@@ -683,14 +690,13 @@ class _LuckyNavigationBarViewState extends State<_LuckyNavigationBarView>
       // Overdragged to the right - snap to last tab
       targetTabIndex = tabCount - 1;
     } else {
-      targetTabIndex = (currentRelativeX / tabWidth).round().clamp(
+      targetTabIndex = (currentRelativeX * (tabCount - 1)).round().clamp(
         0,
         tabCount - 1,
       );
     }
     xAlign = computeAlignmentForTab(targetTabIndex);
 
-    // Notify parent of tab change if different from current
     if (targetTabIndex != widget.tabIndex) {
       widget.onTabChanged(targetTabIndex);
     }
@@ -698,20 +704,27 @@ class _LuckyNavigationBarViewState extends State<_LuckyNavigationBarView>
 
   @override
   Widget build(BuildContext context) {
-    final targetAlignment = computeAlignmentForTab(widget.tabIndex);
+    final hasSelection = widget.tabIndex >= 0;
+    final targetAlignment = computeAlignmentForTab(
+      hasSelection ? widget.tabIndex : 0,
+    );
 
     return GestureDetector(
-      onHorizontalDragDown: _onDragDown,
-      onHorizontalDragUpdate: _onDragUpdate,
-      onHorizontalDragEnd: _onDragEnd,
-      onHorizontalDragCancel: () => setState(() {
-        _isDragging = false;
-        _isDown = false;
-      }),
+      onHorizontalDragDown: hasSelection ? _onDragDown : null,
+      onHorizontalDragUpdate: hasSelection ? _onDragUpdate : null,
+      onHorizontalDragEnd: hasSelection ? _onDragEnd : null,
+      onHorizontalDragCancel: hasSelection
+          ? () => setState(() {
+              _isDragging = false;
+              _isDown = false;
+            })
+          : null,
       child: VelocityMotionBuilder(
         converter: const SingleMotionConverter(),
         value: xAlign,
-        motion: _isDragging
+        motion: _skipMotion
+            ? const Motion.linear(Duration.zero)
+            : _isDragging
             ? const .interactiveSpring(snapToEnd: true)
             : const .bouncySpring(snapToEnd: true),
         builder: (context, value, velocity, child) {
@@ -730,10 +743,11 @@ class _LuckyNavigationBarViewState extends State<_LuckyNavigationBarView>
               children: [
                 child!,
                 _LuckyNavigationBarSelectorView(
-                  velocity: velocity,
+                  velocity: _skipMotion ? 0 : velocity,
                   alignment: alignment,
                   thickness: thickness,
                   destinationsLength: widget.destinations.length,
+                  visible: hasSelection,
                 ),
               ],
             ),
@@ -752,11 +766,14 @@ class _LuckyNavigationBarSelectorView extends StatelessWidget {
   final Alignment alignment;
   final double thickness;
 
+  final bool visible;
+
   const _LuckyNavigationBarSelectorView({
     required this.destinationsLength,
     required this.velocity,
     required this.alignment,
     required this.thickness,
+    required this.visible,
   });
 
   /// Creates a jelly transform matrix based on velocity
@@ -813,16 +830,33 @@ class _LuckyNavigationBarSelectorView extends StatelessWidget {
       right: 4,
       top: 4,
       bottom: 4,
-      child: LayoutBuilder(
-        builder: (context, constraints) => FractionallySizedBox(
-          widthFactor: _resolveWidthFactor(constraints.maxWidth),
-          alignment: alignment,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned.fromRelativeRect(
-                rect: rect!,
-                child: SingleMotionBuilder(
+      child: IgnorePointer(
+        child: TweenAnimationBuilder<double>(
+          duration: kThemeAnimationDuration,
+          curve: Curves.easeOutCubic,
+          tween: Tween(end: visible ? 1.0 : 0.0),
+          builder: (context, visibility, child) => Opacity(
+            opacity: visibility,
+            child: child,
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) => FractionallySizedBox(
+              widthFactor: _resolveWidthFactor(constraints.maxWidth),
+              alignment: alignment,
+              child: TweenAnimationBuilder<double>(
+                duration: kThemeAnimationDuration,
+                curve: Curves.easeOutCubic,
+                tween: Tween(end: visible ? 1.0 : 0.0),
+                builder: (context, visibility, child) => Transform.scale(
+                  scale: lerpDouble(.6, 1, visibility) ?? 1,
+                  child: child,
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned.fromRelativeRect(
+                      rect: rect!,
+                      child: SingleMotionBuilder(
                   motion: Motion.bouncySpring(
                     duration: kThemeAnimationDuration * 2,
                   ),
@@ -851,6 +885,9 @@ class _LuckyNavigationBarSelectorView extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+              ),
+            ),
           ),
         ),
       ),

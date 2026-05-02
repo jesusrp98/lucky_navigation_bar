@@ -33,7 +33,7 @@ class _ExampleScaffoldState extends State<ExampleScaffold> {
   bool _showFab = true;
   bool _minimized = false;
   bool _showAccessory = true;
-  int _selectedIndex = 0;
+  int _selectedIndex = -1;
 
   @override
   Widget build(BuildContext context) {
@@ -93,6 +93,15 @@ class _ExampleScaffoldState extends State<ExampleScaffold> {
               });
             },
           ),
+          SwitchListTile(
+            title: const Text('No selection'),
+            value: _selectedIndex == -1,
+            onChanged: (val) {
+              setState(() {
+                _selectedIndex = val ? -1 : 0;
+              });
+            },
+          ),
           Expanded(
             child: Center(
               child: Text(
@@ -119,7 +128,7 @@ class _ExampleScaffoldState extends State<ExampleScaffold> {
         ),
         onDestinationSelected: (idx) {
           setState(() {
-            _selectedIndex = idx;
+            _selectedIndex = _selectedIndex == idx ? -1 : idx;
           });
         },
         onMinimizedPressed: () {
