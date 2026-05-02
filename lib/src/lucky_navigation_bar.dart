@@ -207,9 +207,11 @@ class _LuckyNavigationBarState extends State<LuckyNavigationBar>
                         ),
                       Row(
                         spacing: 8,
-                        mainAxisAlignment: widget.trailing == null
-                            ? .center
-                            : .spaceBetween,
+                        mainAxisAlignment: widget.trailing != null
+                            ? .spaceBetween
+                            : widget.minimized && widget.accessory != null
+                            ? .start
+                            : .center,
                         children: [
                           Flexible(
                             child: Listener(

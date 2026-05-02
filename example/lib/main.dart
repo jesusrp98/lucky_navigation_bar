@@ -15,6 +15,10 @@ class MainApp extends StatelessWidget {
       home: ExampleScaffold(),
       theme: ThemeData.light().copyWith(
         iconTheme: const IconThemeData(opticalSize: 24),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: ThemeData.light().colorScheme.surfaceContainerLow,
+          foregroundColor: ThemeData.light().colorScheme.onSurfaceVariant,
+        ),
       ),
       debugShowCheckedModeBanner: false,
     );
@@ -159,28 +163,28 @@ class _Accessory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return SizedBox(
-      height: LuckyNavigationBar.minimizedHeight,
-      child: Material(
-        shape: RoundedSuperellipseBorder(
-          borderRadius: BorderRadius.circular(LuckyNavigationBar.height / 2),
-          side: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: .4),
-            width: 0.5,
+    return Row(
+      spacing: 8,
+      children: [
+        for (final label in ['1', '2'])
+          Expanded(
+            child: SizedBox(
+              height: LuckyNavigationBar.minimizedHeight,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: label == '1'
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
+                  foregroundColor: label == '1'
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : null,
+                ),
+                onPressed: () {},
+                child: Center(child: Text('Button $label')),
+              ),
+            ),
           ),
-        ),
-        color: colorScheme.surfaceContainer,
-        elevation: 1,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Row(
-            mainAxisAlignment: .spaceAround,
-            children: const [Text('Years'), Text('Months')],
-          ),
-        ),
-      ),
+      ],
     );
   }
 }
