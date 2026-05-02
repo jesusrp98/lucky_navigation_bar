@@ -41,6 +41,9 @@ class LuckyNavigationBar extends StatefulWidget {
   static const height = 62.0;
   static const minimizedHeight = 48.0;
 
+  /// Duration of the minimize/maximize morph (height, padding, width, icon).
+  static const minimizeDuration = Duration(milliseconds: 600);
+
   /// The list of navigation destinations to display.
   final List<NavigationDestination> destinations;
 
@@ -170,7 +173,7 @@ class _LuckyNavigationBarState extends State<LuckyNavigationBar>
             child: _LuckyNavigationBarBrim(),
           ),
           TweenAnimationBuilder<double>(
-            duration: const Duration(milliseconds: 400),
+            duration: LuckyNavigationBar.minimizeDuration,
             curve: Curves.easeInOutCubicEmphasized,
             tween: Tween(end: widget.minimized ? 1 : 0),
             builder: (context, progress, _) {
@@ -276,7 +279,7 @@ class _LuckyNavigationBarAccessory extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
-      duration: kThemeAnimationDuration * 2,
+      duration: LuckyNavigationBar.minimizeDuration,
       curve: Curves.easeOutCubic,
       tween: Tween(end: visible ? 1.0 : 0.0),
       builder: (context, value, child) {
@@ -358,7 +361,7 @@ class _LuckyNavigationBarSurface extends StatelessWidget {
     final selectedDestination = destinations[selectedDestinationIndex];
 
     return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 400),
+      duration: LuckyNavigationBar.minimizeDuration,
       curve: Curves.easeInOutCubicEmphasized,
       tween: Tween(end: minimized ? 1 : 0),
       builder: (context, progress, _) => GestureDetector(
@@ -859,35 +862,35 @@ class _LuckyNavigationBarSelectorView extends StatelessWidget {
                     Positioned.fromRelativeRect(
                       rect: rect!,
                       child: SingleMotionBuilder(
-                  motion: Motion.bouncySpring(
-                    duration: kThemeAnimationDuration * 2,
-                  ),
-                  value: velocity,
-                  builder: (context, velocity, child) => Transform(
-                    alignment: Alignment.center,
-                    transform: _buildJellyTransform(
-                      velocity: Offset(velocity, 0),
-                      maxDistortion: .8,
-                      velocityScale: 10,
-                    ),
-                    child: child,
-                  ),
-                  child: DecoratedBox(
-                    decoration: ShapeDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.16),
-                      shape: RoundedSuperellipseBorder(
-                        borderRadius: BorderRadius.circular(
-                          LuckyNavigationBar.height,
+                        motion: Motion.bouncySpring(
+                          duration: kThemeAnimationDuration * 2,
+                        ),
+                        value: velocity,
+                        builder: (context, velocity, child) => Transform(
+                          alignment: Alignment.center,
+                          transform: _buildJellyTransform(
+                            velocity: Offset(velocity, 0),
+                            maxDistortion: .8,
+                            velocityScale: 10,
+                          ),
+                          child: child,
+                        ),
+                        child: DecoratedBox(
+                          decoration: ShapeDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.16),
+                            shape: RoundedSuperellipseBorder(
+                              borderRadius: BorderRadius.circular(
+                                LuckyNavigationBar.height,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ),
-            ],
-          ),
               ),
             ),
           ),
